@@ -1,0 +1,35 @@
+[package]
+name = "codey"
+version = "0.1.0"
+edition = "2024"
+description = "Local Codex scheduler with a browser interface and native tray"
+license = "MIT"
+default-run = "codey"
+autotests = false
+
+[features]
+test-runtime = []
+
+[[bin]]
+name = "codey-mock"
+path = "tests/mock_codex.rs"
+required-features = ["test-runtime"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+sha2 = "0.10"
+tiny_http = "0.12"
+dirs = "6"
+fs2 = "0.4"
+open = "5"
+tray-icon = "0.26"
+tao = "0.34"
+notify-rust = "4"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+opt-level = "s"

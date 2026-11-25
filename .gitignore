@@ -1,0 +1,4 @@
+/target/
+/protocol-reference/
+/test-data/
+*.log

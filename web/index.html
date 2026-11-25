@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codey · 本地任务调度</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="brand-mark">c</span><span>Codey<small>LOCAL CODEX SCHEDULER</small></span></a>
+    <div class="nav-label">你的工作空间</div>
+    <nav aria-label="主导航">
+      <button class="nav-item selected" data-view="workspace"><span>◫</span>任务工作台</button>
+      <button class="nav-item" data-view="history"><span>◷</span>执行记录</button>
+      <button class="nav-item" data-view="settings"><span>⚙</span>运行环境</button>
+    </nav>
+    <div class="sidebar-note"><span class="live-dot"></span>在你的电脑上运行<p>关掉浏览器，任务照常执行。<br>通过系统托盘重新打开。</p></div>
+    <div class="runtime-mini"><span class="runtime-letter">›_</span><div><strong id="runtime-version">正在检测 Codex</strong><small id="account-label">连接本机运行环境</small></div></div>
+    <button id="exit-button" class="sidebar-exit">退出后台程序 ↗</button>
+  </aside>
+  <main>
+    <header><div><div class="eyebrow">YOUR NEXT MOVE, SCHEDULED.</div><h1 id="page-title">任务工作台<span class="heading-dot">.</span></h1><p id="page-subtitle">把工作安排好，让 Codex 在合适的时间接着做。</p></div><div class="header-actions"><span class="local-chip"><span class="live-dot"></span>仅本机访问</span><button id="notifications-button" class="button ghost">启用桌面通知</button></div></header>
+    <div id="connection-banner" class="banner hidden" role="status"></div>
+    <div id="error-banner" class="banner error hidden" role="alert"></div>
+    <section id="view-workspace">
+      <div class="stats"><div class="stat"><span>等待执行</span><strong id="count-scheduled">0</strong><small>按计划，稳步推进</small></div><div class="stat"><span>正在执行</span><strong id="count-running">0</strong><small>后台持续跟踪进度</small></div><div class="stat"><span>需要你处理</span><strong id="count-attention">0</strong><small>审批、确认与结果核对</small></div></div>
+      <section id="approval-section" class="approval-section hidden" aria-label="待处理审批"><div class="section-title"><h2>有任务在等待审批</h2><span class="tag amber">需要处理</span></div><div id="approval-list"></div></section>
+      <div class="workspace-grid">
+        <section class="panel compose"><div class="panel-heading"><div><span class="step">01 / ARRANGE</span><h2 id="form-title">安排一项工作</h2></div><button id="reset-form" class="text-button" type="button">重置</button></div>
+          <form id="job-form">
+            <label for="job-title">任务名称 <span class="optional">可选</span></label><input id="job-title" maxlength="100" placeholder="给这项工作起个名字">
+            <label for="cwd">项目目录</label><div class="input-row"><input id="cwd" required placeholder="选择或输入本机项目的绝对路径"><button type="button" id="browse-cwd" class="button secondary">浏览</button></div>
+            <label for="thread-mode">对话</label><div class="input-row"><select id="thread-mode"><option value="new">新建对话</option><option value="existing">已有对话</option></select><button type="button" id="refresh-threads" class="button secondary">刷新对话</button></div>
+            <div id="thread-fields" class="hidden"><input id="thread-search" placeholder="搜索标题、目录或对话 ID" aria-label="搜索已有对话"><select id="thread-id" aria-label="已有对话"></select><button id="more-threads" class="text-button hidden" type="button">加载更多对话</button><p class="hint">选择对话时会填入它的项目目录，执行时沿用会话模型。</p></div>
+            <label for="prompt">工作指令 <span id="prompt-size" class="optional">0 / 64 KiB</span></label><textarea id="prompt" required rows="7" placeholder="输入完整的工作指令。所有 Prompt 均由你自行填写。"></textarea>
+            <div class="field-grid"><div><label for="send-mode">什么时候执行</label><select id="send-mode"><option value="time">指定时间</option><option value="available">Codex 可用时</option></select></div><div id="time-field"><label for="send-at">本地日期与时间</label><input id="send-at" type="datetime-local" required></div><div id="wait-field" class="hidden"><label for="wait-days">最多等待天数</label><input id="wait-days" type="number" min="1" max="30" value="8"></div></div>
+            <div id="model-fields" class="field-grid"><div><label for="model">模型</label><select id="model"><option value="">Codex 默认模型</option></select></div><div><label for="effort">推理强度</label><select id="effort"><option value="">模型默认值</option></select></div></div>
+            <details class="advanced"><summary>权限与执行规则<span>按任务保存</span></summary>
+              <div class="field-grid"><div><label for="sandbox">Codex 沙箱</label><select id="sandbox"><option value="read-only">只读</option><option value="workspace-write" selected>项目内写入</option><option value="danger-full-access">完整访问</option></select></div><div><label for="approval-policy">Codex 审批策略</label><select id="approval-policy"><option value="on-request">由 Codex 请求审批</option><option value="untrusted">不受信任操作需审批</option><option value="never">不请求审批（受沙箱约束）</option></select></div></div>
+              <label class="checkbox"><input id="network" type="checkbox">允许沙箱内网络访问</label>
+              <div id="stale-field"><label for="stale-policy">对话内容发生变化时</label><select id="stale-policy"><option value="confirm">等待确认</option><option value="skip">跳过任务</option><option value="send">继续执行</option></select></div>
+              <label for="missed-policy">休眠或重启后错过执行时间</label><select id="missed-policy"><option value="confirm">等待确认</option><option value="send">恢复后补执行</option><option value="skip">跳过任务</option></select>
+              <p class="hint">权限直接交给 Codex 执行，可能成为该对话后续轮次的设置；不修改全局配置。仍需审批时会等待你的决定，超时后中断本次尝试。</p>
+            </details>
+            <div id="save-summary" class="save-summary"></div><button id="save-job" class="button primary full" type="submit">安排任务 <span>↗</span></button><button id="cancel-edit" class="text-button full hidden" type="button">取消编辑</button>
+          </form>
+        </section>
+        <section class="panel queue"><div class="panel-heading"><div><span class="step">02 / FOLLOW THROUGH</span><h2>接下来的工作</h2></div><span id="queue-count" class="count-badge">0</span></div><div class="list-tools"><input id="job-search" placeholder="搜索任务或指令" aria-label="搜索任务"><select id="job-filter" aria-label="筛选任务状态"><option value="all">全部状态</option><option value="scheduled">等待执行</option><option value="running">执行中</option><option value="attention">需要处理</option></select></div><div id="job-list" class="job-list"></div><div id="jobs-pagination" class="pagination"></div><div class="queue-footer"><span class="live-dot"></span>任务与进度保存在本机</div></section>
+      </div>
+    </section>
+    <section id="view-history" class="hidden"><div class="section-title"><p>保留真实的执行结果，方便追溯每一次交接。</p><div class="input-row"><button id="refresh-history" class="button secondary">核对执行状态</button><button id="clear-history" class="button ghost">清理已结束记录</button></div></div><div class="panel"><div id="history-list" class="history-list"></div><div id="history-pagination" class="pagination"></div></div></section>
+    <section id="view-settings" class="hidden"><div class="settings-grid"><section class="panel settings-panel"><span class="step">RUNTIME / LOCAL FIRST</span><h2>连接 Codex CLI</h2><p class="hint">优先从 PATH 自动发现，也可以手动指定命令入口或二进制。</p><label for="codex-path">Codex 路径 <span class="optional">留空即自动发现</span></label><div class="input-row"><input id="codex-path" placeholder="自动从系统 PATH 查找"><button id="browse-runtime" class="button secondary">浏览</button></div><button id="probe-runtime" class="button secondary">检测运行环境</button><div id="runtime-result" class="runtime-result"></div><div class="install-guide"><h3>还没有安装 Codex CLI？</h3><p>先安装 Node.js LTS（包含 npm），然后在终端运行：</p><code>npm install -g @openai/codex@latest</code><p>完成后运行 <code>codex login</code> 登录，再回到这里重新检测。通过 npm 安装的 Codex 需要保留其 Node.js 环境。</p><a href="https://developers.openai.com/codex/cli/" target="_blank" rel="noreferrer">查看官方安装说明 ↗</a></div></section><section class="panel settings-panel"><span class="step">PREFERENCES</span><h2>后台偏好</h2><label for="approval-timeout">审批最长等待时间（秒）</label><input id="approval-timeout" type="number" min="30" max="86400" value="600"><p class="hint">无人处理时，超时会拒绝该请求并尝试中断执行，不会自动重发 Prompt。</p><label for="retention">已结束历史保留天数</label><input id="retention" type="number" min="0" max="3650" value="0"><p class="hint">0 表示不自动清理。结果待核对的记录始终保留。</p><button id="save-settings" class="button primary">保存运行设置</button><div class="local-details"><strong>你的数据留在这里</strong><code id="data-dir"></code><p>任务与输出以明文保存在本机。管理服务仅监听本机地址。</p></div></section></div></section>
+    <footer><span>Codey <span id="app-version">0.1.0</span></span><span>为下一步工作，留好时间。</span></footer>
+  </main>
+  <dialog id="detail-dialog"><div class="dialog-heading"><h2 id="detail-title">任务详情</h2><button class="icon-button" data-close="detail-dialog" aria-label="关闭">×</button></div><div id="detail-meta"></div><h3>工作指令</h3><pre id="detail-prompt"></pre><h3>执行输出</h3><pre id="detail-output" class="output"></pre></dialog>
+  <dialog id="browse-dialog"><div class="dialog-heading"><h2 id="browse-title">选择目录</h2><button class="icon-button" data-close="browse-dialog" aria-label="关闭">×</button></div><div class="input-row"><input id="browse-path" aria-label="文件浏览路径"><button id="browse-go" class="button secondary">前往</button></div><div class="input-row browse-tools"><button id="browse-roots" class="text-button">磁盘</button><button id="browse-home" class="text-button">用户目录</button><button id="browse-up" class="text-button">上一级</button></div><div id="browse-list"></div><button id="browse-select" class="button primary full">选择此目录</button></dialog>
+  <dialog id="exit-dialog"><div class="dialog-heading"><h2>退出 Codey 后台</h2><button class="icon-button" data-close="exit-dialog" aria-label="关闭">×</button></div><p>关闭浏览器不会退出后台。完全退出后，计划任务要等下次启动才能继续处理。</p><p id="exit-active"></p><div class="exit-actions"><button id="exit-wait" class="button secondary">等待执行完成后退出</button><button id="exit-interrupt" class="button primary">中断执行并退出</button></div></dialog>
+  <div id="toast" class="toast hidden" role="status"></div>
+</body>
+</html>
