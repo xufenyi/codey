@@ -2,6 +2,12 @@
 
 一个 Codex 任务调度器，帮你定时向 Codex 投放提示词，包括**额度恢复后自动投送**，解决 5 小时焦虑！
 
+![软件界面](./docs/ui.png)
+
+## 下载
+
+请访问 [Release 页面](https://github.com/xufenyi/codey/releases)。
+
 ## 使用
 
 本程序依赖 [Codex CLI](https://github.com/openai/codex)，请先安装并登录，更多信息请查阅[Codex 官方文档](https://developers.openai.com/codex/cli/)。
